@@ -20,12 +20,13 @@ export async function POST(request: Request) {
     }
 
     await connectDB();
+    console.log("MongoDB connected successfully");
 
     await Contact.create(validated);
 
     return NextResponse.json({ ok: true, message: "Contact enquiry saved." });
   } catch (error) {
-    console.error("[api/contact]", error);
+    console.error("CONTACT API ERROR:", error);
     return NextResponse.json(
       { ok: false, message: "Failed to save contact enquiry." },
       { status: 500 },
