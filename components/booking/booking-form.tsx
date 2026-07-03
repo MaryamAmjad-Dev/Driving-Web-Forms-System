@@ -1,5 +1,6 @@
 "use client";
 
+import type { FormEvent } from "react";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { SubjectSelect } from "@/components/contact/subject-select";
 
@@ -8,21 +9,21 @@ const inputClassName =
 
 type BookingFormProps = {
   dict: Dictionary;
-  formAction: (formData: FormData) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   pending: boolean;
   showError: boolean;
 };
 
 export function BookingForm({
   dict,
-  formAction,
+  onSubmit,
   pending,
   showError,
 }: BookingFormProps) {
   const page = dict.bookingPage;
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       <div>
         <label className="mb-1 block text-sm font-medium" htmlFor="booking-name">
           {page.formName}

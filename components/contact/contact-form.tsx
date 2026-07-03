@@ -1,11 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, type FormEvent } from "react";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import {
-  submitContact,
-  type ContactFormState,
-} from "@/app/[locale]/contact/actions";
 import { SubjectSelect } from "@/components/contact/subject-select";
 
 const inputClassName =
@@ -16,12 +12,41 @@ type ContactFormProps = {
 };
 
 export function ContactForm({ dict }: ContactFormProps) {
-  const [state, formAction, pending] = useActionState<
-    ContactFormState,
-    FormData
-  >(submitContact, null);
+  const [pending, setPending] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
 
-  if (state?.ok) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setShowError(false);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        setShowError(true);
+        return;
+      }
+
+      form.reset();
+      setSuccess(true);
+    } catch {
+      setShowError(true);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (success) {
     return (
       <p
         className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-100"
@@ -32,11 +57,10 @@ export function ContactForm({ dict }: ContactFormProps) {
     );
   }
 
-  const showError = state?.ok === false;
   const c = dict.contactPage;
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="mb-1 block text-sm font-medium" htmlFor="name">
           {c.formName}

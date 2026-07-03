@@ -1,11 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, type FormEvent } from "react";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import {
-  submitBooking,
-  type BookingFormState,
-} from "@/app/[locale]/booking/actions";
 import { BookingForm } from "@/components/booking/booking-form";
 import { BookingPageBackdrop } from "@/components/booking/booking-page-backdrop";
 import { BookingSidebar } from "@/components/booking/booking-sidebar";
@@ -19,19 +15,48 @@ type BookingPageClientProps = {
 };
 
 export function BookingPageClient({ dict }: BookingPageClientProps) {
-  const [state, formAction, pending] = useActionState<
-    BookingFormState,
-    FormData
-  >(submitBooking, null);
+  const [pending, setPending] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
 
   const page = dict.bookingPage;
   const contact = dict.contactPage;
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setShowError(false);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch("/api/booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        setShowError(true);
+        return;
+      }
+
+      form.reset();
+      setSuccess(true);
+    } catch {
+      setShowError(true);
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <div className="msa-booking-page border-b border-border">
       <BookingPageBackdrop />
       <div className="relative z-1">
-        {state?.ok ? (
+        {success ? (
           <BookingSuccessView
             title={page.successTitle}
             message={page.successMessage}
@@ -61,9 +86,9 @@ export function BookingPageClient({ dict }: BookingPageClientProps) {
                     <div className="mt-5">
                       <BookingForm
                         dict={dict}
-                        formAction={formAction}
+                        onSubmit={handleSubmit}
                         pending={pending}
-                        showError={state?.ok === false}
+                        showError={showError}
                       />
                     </div>
                   </div>
