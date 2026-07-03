@@ -3,6 +3,7 @@ import { Bebas_Neue, Geist } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
 import { ThemeScript } from "@/components/theme-script";
+import { ToastProvider } from "@/components/toast-provider";
 import { LocalBusinessJsonLd } from "@/components/local-business-json-ld";
 import { defaultLocale } from "@/lib/i18n/config";
 import { defaultMetadata } from "@/lib/seo";
@@ -35,6 +36,7 @@ export default async function RootLayout({
       <body className="min-h-full bg-background font-sans text-foreground">
         <ThemeScript />
         <LocalBusinessJsonLd />
+        <ToastProvider />
         {children}
       </body>
     </html>

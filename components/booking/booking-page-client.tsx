@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
+import toast from "react-hot-toast";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { submitFormApi } from "@/lib/forms/submit-form";
+import { hasMinWords } from "@/lib/forms/word-count";
 import { BookingForm } from "@/components/booking/booking-form";
 import { BookingPageBackdrop } from "@/components/booking/booking-page-backdrop";
 import { BookingSidebar } from "@/components/booking/booking-sidebar";
@@ -17,37 +20,56 @@ type BookingPageClientProps = {
 export function BookingPageClient({ dict }: BookingPageClientProps) {
   const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [notesError, setNotesError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   const page = dict.bookingPage;
   const contact = dict.contactPage;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (submittingRef.current) {
+      return;
+    }
+
+    submittingRef.current = true;
     setPending(true);
-    setShowError(false);
+    setErrorMessage(null);
+    setNotesError(null);
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const notes = String(formData.get("notes") ?? "").trim();
+
+    if (!hasMinWords(notes)) {
+      setNotesError(page.formNotesMinWords);
+      submittingRef.current = false;
+      setPending(false);
+      return;
+    }
+
     const payload = Object.fromEntries(formData.entries());
 
     try {
-      const response = await fetch("/api/booking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const result = await submitFormApi("/api/booking", payload);
 
-      if (!response.ok) {
-        setShowError(true);
+      if (!result.ok) {
+        const message = result.message || page.formError;
+        setErrorMessage(message);
+        toast.error(message);
         return;
       }
 
       form.reset();
       setSuccess(true);
+      toast.success(page.formSuccess);
     } catch {
-      setShowError(true);
+      setErrorMessage(page.formError);
+      toast.error(page.formError);
     } finally {
+      submittingRef.current = false;
       setPending(false);
     }
   }
@@ -88,7 +110,8 @@ export function BookingPageClient({ dict }: BookingPageClientProps) {
                         dict={dict}
                         onSubmit={handleSubmit}
                         pending={pending}
-                        showError={showError}
+                        errorMessage={errorMessage}
+                        notesError={notesError}
                       />
                     </div>
                   </div>

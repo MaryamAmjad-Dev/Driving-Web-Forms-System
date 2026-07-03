@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
+import toast from "react-hot-toast";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { submitFormApi } from "@/lib/forms/submit-form";
+import { hasMinWords } from "@/lib/forms/word-count";
 import { SubjectSelect } from "@/components/contact/subject-select";
 
 const inputClassName =
@@ -14,34 +17,54 @@ type ContactFormProps = {
 export function ContactForm({ dict }: ContactFormProps) {
   const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [messageError, setMessageError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (submittingRef.current) {
+      return;
+    }
+
+    submittingRef.current = true;
     setPending(true);
-    setShowError(false);
+    setErrorMessage(null);
+    setMessageError(null);
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const c = dict.contactPage;
+    const message = String(formData.get("message") ?? "").trim();
+
+    if (!hasMinWords(message)) {
+      setMessageError(c.formMessageMinWords);
+      submittingRef.current = false;
+      setPending(false);
+      return;
+    }
+
     const payload = Object.fromEntries(formData.entries());
 
     try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const result = await submitFormApi("/api/contact", payload);
 
-      if (!response.ok) {
-        setShowError(true);
+      if (!result.ok) {
+        const message = result.message || c.formError;
+        setErrorMessage(message);
+        toast.error(message);
         return;
       }
 
       form.reset();
       setSuccess(true);
+      toast.success(c.formSuccess);
     } catch {
-      setShowError(true);
+      setErrorMessage(c.formError);
+      toast.error(c.formError);
     } finally {
+      submittingRef.current = false;
       setPending(false);
     }
   }
@@ -60,7 +83,7 @@ export function ContactForm({ dict }: ContactFormProps) {
   const c = dict.contactPage;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" aria-busy={pending}>
       <div>
         <label className="mb-1 block text-sm font-medium" htmlFor="name">
           {c.formName}
@@ -70,6 +93,7 @@ export function ContactForm({ dict }: ContactFormProps) {
           name="name"
           required
           autoComplete="name"
+          disabled={pending}
           className={inputClassName}
         />
       </div>
@@ -88,6 +112,7 @@ export function ContactForm({ dict }: ContactFormProps) {
           type="email"
           required
           autoComplete="email"
+          disabled={pending}
           className={inputClassName}
         />
       </div>
@@ -100,6 +125,7 @@ export function ContactForm({ dict }: ContactFormProps) {
           name="phone"
           type="tel"
           autoComplete="tel"
+          disabled={pending}
           className={inputClassName}
         />
       </div>
@@ -112,18 +138,24 @@ export function ContactForm({ dict }: ContactFormProps) {
           name="message"
           required
           rows={5}
-          minLength={10}
+          disabled={pending}
           className={inputClassName}
         />
+        {messageError ? (
+          <p className="mt-1 text-sm text-destructive" role="alert">
+            {messageError}
+          </p>
+        ) : null}
       </div>
-      {showError ? (
+      {errorMessage ? (
         <p className="text-sm text-destructive" role="alert">
-          {c.formError}
+          {errorMessage}
         </p>
       ) : null}
       <button
         type="submit"
         disabled={pending}
+        aria-disabled={pending}
         className="inline-flex w-full items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-black shadow-sm transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         {pending ? c.formSending : c.formSubmit}

@@ -1,3 +1,8 @@
+import { hasMinWords } from "@/lib/forms/word-count";
+
+export const BOOKING_NOTES_MIN_WORDS_ERROR =
+  "Additional notes must contain at least 10 words.";
+
 export const BOOKING_LESSON_TYPES = [
   "beginner",
   "intensive",
@@ -90,6 +95,7 @@ export function validateBooking(
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return null;
   if (!includes(BOOKING_LESSON_TYPES, payload.lessonType)) return null;
   if (!includes(BOOKING_TRANSMISSIONS, payload.transmission)) return null;
+  if (!hasMinWords(payload.notes)) return null;
 
   const preferredDay = payload.preferredDay || "any";
   const preferredTime = payload.preferredTime || "any";

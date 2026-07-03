@@ -1,3 +1,8 @@
+import { hasMinWords } from "@/lib/forms/word-count";
+
+export const CONTACT_MESSAGE_MIN_WORDS_ERROR =
+  "Message must contain at least 10 words.";
+
 export const CONTACT_SUBJECT_VALUES = [
   "book-lesson",
   "price-inquiry",
@@ -47,7 +52,7 @@ export function validateContact(
   if (payload.name.length < 2) return null;
   if (!isContactSubject(payload.subject)) return null;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return null;
-  if (payload.message.length < 10) return null;
+  if (!hasMinWords(payload.message)) return null;
 
   return {
     name: payload.name,

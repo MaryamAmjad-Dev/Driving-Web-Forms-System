@@ -697,6 +697,7 @@ export const dictionaries = {
         { value: "licence-refresher", label: "Already have a licence — refresher needed" },
       ],
       formNotes: "Additional notes",
+      formNotesMinWords: "Please enter at least 10 words in additional notes.",
       formSubmit: "Submit booking request",
       formSending: "Sending…",
       formSuccess:
@@ -783,6 +784,7 @@ export const dictionaries = {
       formEmail: "Email",
       formPhone: "Phone (optional)",
       formMessage: "Message",
+      formMessageMinWords: "Please enter at least 10 words in your message.",
       formSubmit: "Send enquiry",
       formSending: "Sending…",
       formSuccess: "Thank you — we have received your message and will get back to you shortly.",
@@ -1529,6 +1531,7 @@ export const dictionaries = {
         { value: "licence-refresher", label: "Mam prawo jazdy — potrzebuję doszkolenia" },
       ],
       formNotes: "Dodatkowe informacje",
+      formNotesMinWords: "Wpisz co najmniej 10 słów w dodatkowych informacjach.",
       formSubmit: "Wyślij prośbę o rezerwację",
       formSending: "Wysyłanie…",
       formSuccess:
@@ -1617,6 +1620,7 @@ export const dictionaries = {
       formEmail: "E-mail",
       formPhone: "Telefon (opcjonalnie)",
       formMessage: "Wiadomość",
+      formMessageMinWords: "Wpisz co najmniej 10 słów w wiadomości.",
       formSubmit: "Wyślij zapytanie",
       formSending: "Wysyłanie…",
       formSuccess: "Dziękujemy — otrzymaliśmy wiadomość i wkrótce się odezwiemy.",
