@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useRef, useState, type FormEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import {
-  submitBooking,
-  type BookingFormState,
-} from "@/app/[locale]/booking/actions";
+import { USER_LOGIN_REQUIRED_MESSAGE } from "@/lib/auth/user-auth";
+import { submitFormApi } from "@/lib/forms/submit-form";
+import { hasMinWords } from "@/lib/forms/word-count";
 import { BookingForm } from "@/components/booking/booking-form";
 import { BookingPageBackdrop } from "@/components/booking/booking-page-backdrop";
 import { BookingSidebar } from "@/components/booking/booking-sidebar";
@@ -16,22 +17,89 @@ import { PageHeader } from "@/components/ui/page-header";
 
 type BookingPageClientProps = {
   dict: Dictionary;
+  isAuthenticated: boolean;
 };
 
-export function BookingPageClient({ dict }: BookingPageClientProps) {
-  const [state, formAction, pending] = useActionState<
-    BookingFormState,
-    FormData
-  >(submitBooking, null);
+export function BookingPageClient({
+  dict,
+  isAuthenticated,
+}: BookingPageClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [pending, setPending] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [notesError, setNotesError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   const page = dict.bookingPage;
   const contact = dict.contactPage;
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (submittingRef.current) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast.error(USER_LOGIN_REQUIRED_MESSAGE);
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    submittingRef.current = true;
+    setPending(true);
+    setErrorMessage(null);
+    setNotesError(null);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const notes = String(formData.get("notes") ?? "").trim();
+
+    if (!hasMinWords(notes)) {
+      setNotesError(page.formNotesMinWords);
+      submittingRef.current = false;
+      setPending(false);
+      return;
+    }
+
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+      const result = await submitFormApi("/api/booking", payload);
+
+      if (!result.ok) {
+        const message = result.message || page.formError;
+
+        if (result.status === 401) {
+          toast.error(USER_LOGIN_REQUIRED_MESSAGE);
+          router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+          return;
+        }
+
+        setErrorMessage(message);
+        toast.error(message);
+        return;
+      }
+
+      form.reset();
+      setSuccess(true);
+      toast.success(page.formSuccess);
+    } catch {
+      setErrorMessage(page.formError);
+      toast.error(page.formError);
+    } finally {
+      submittingRef.current = false;
+      setPending(false);
+    }
+  }
 
   return (
     <div className="msa-booking-page border-b border-border">
       <BookingPageBackdrop />
       <div className="relative z-1">
-        {state?.ok ? (
+        {success ? (
           <BookingSuccessView
             title={page.successTitle}
             message={page.successMessage}
@@ -61,9 +129,10 @@ export function BookingPageClient({ dict }: BookingPageClientProps) {
                     <div className="mt-5">
                       <BookingForm
                         dict={dict}
-                        formAction={formAction}
+                        onSubmit={handleSubmit}
                         pending={pending}
-                        showError={state?.ok === false}
+                        errorMessage={errorMessage}
+                        notesError={notesError}
                       />
                     </div>
                   </div>

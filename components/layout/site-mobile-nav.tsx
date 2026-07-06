@@ -8,14 +8,17 @@ import type { Locale } from "@/lib/i18n/config";
 import { mobileNavLabels } from "@/lib/i18n/ui-labels";
 import { ROUTES } from "@/lib/constants";
 import { isRouteActive, localeHref, type NavLink } from "@/lib/i18n/routing";
+import type { PublicUser } from "@/lib/auth/user-session";
+import { UserAuthNavMobile } from "@/components/layout/user-auth-nav";
 
 type MobileNavProps = {
   locale: Locale;
   dict: Dictionary;
   links: NavLink[];
+  user: PublicUser | null;
 };
 
-export function MobileNav({ locale, dict, links }: MobileNavProps) {
+export function MobileNav({ locale, dict, links, user }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const labels = mobileNavLabels(locale);
   const pathname = usePathname();
@@ -62,6 +65,13 @@ export function MobileNav({ locale, dict, links }: MobileNavProps) {
             >
               {dict.nav.book}
             </Link>
+            <UserAuthNavMobile
+              loginLabel={dict.nav.login}
+              signupLabel={dict.nav.signup}
+              logoutLabel={dict.nav.logout}
+              user={user}
+              onNavigate={() => setOpen(false)}
+            />
           </nav>
         </div>
       ) : null}

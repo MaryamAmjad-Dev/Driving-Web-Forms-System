@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ROUTES } from "@/lib/constants";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildPageMetadata, resolveLocale } from "@/lib/seo/page-metadata";
+import { getPublicUser } from "@/lib/auth/user-session";
 
 export async function generateMetadata({
   params,
@@ -39,6 +40,7 @@ export default async function ContactPage({
   const dict = await getDictionary(locale);
   const page = dict.contactPage;
   const map = dict.home.map;
+  const user = await getPublicUser();
 
   return (
     <div className="msa-contact-page border-b border-border">
@@ -66,7 +68,7 @@ export default async function ContactPage({
                   {page.formTitle}
                 </h2>
                 <div className="mt-5">
-                  <ContactForm dict={dict} />
+                  <ContactForm dict={dict} isAuthenticated={!!user} />
                 </div>
               </div>
             </SectionReveal>

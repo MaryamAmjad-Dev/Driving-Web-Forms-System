@@ -8,6 +8,7 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { defaultLocale, isLocale, locales, type Locale } from "@/lib/i18n/config";
 import { defaultMetadata } from "@/lib/seo";
 import { siteUrl } from "@/lib/site";
+import { getPublicUser } from "@/lib/auth/user-session";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -55,10 +56,11 @@ export default async function LocaleLayout({
   if (!isLocale(raw)) notFound();
 
   const dict = await getDictionary(raw);
+  const user = await getPublicUser();
 
   return (
     <div className="flex min-h-full flex-col">
-      <SiteHeader locale={raw} dict={dict} />
+      <SiteHeader locale={raw} dict={dict} user={user} />
       <main className="flex-1">{children}</main>
       <SiteFooter locale={raw} dict={dict} />
       <FloatingWhatsapp

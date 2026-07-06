@@ -1,5 +1,6 @@
 "use client";
 
+import type { FormEvent } from "react";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { SubjectSelect } from "@/components/contact/subject-select";
 
@@ -8,21 +9,23 @@ const inputClassName =
 
 type BookingFormProps = {
   dict: Dictionary;
-  formAction: (formData: FormData) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   pending: boolean;
-  showError: boolean;
+  errorMessage: string | null;
+  notesError: string | null;
 };
 
 export function BookingForm({
   dict,
-  formAction,
+  onSubmit,
   pending,
-  showError,
+  errorMessage,
+  notesError,
 }: BookingFormProps) {
   const page = dict.bookingPage;
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4" aria-busy={pending}>
       <div>
         <label className="mb-1 block text-sm font-medium" htmlFor="booking-name">
           {page.formName}
@@ -33,6 +36,7 @@ export function BookingForm({
           name="name"
           required
           autoComplete="name"
+          disabled={pending}
           className={inputClassName}
         />
       </div>
@@ -48,6 +52,7 @@ export function BookingForm({
           type="tel"
           required
           autoComplete="tel"
+          disabled={pending}
           className={inputClassName}
         />
       </div>
@@ -63,6 +68,7 @@ export function BookingForm({
           type="email"
           required
           autoComplete="email"
+          disabled={pending}
           className={inputClassName}
         />
       </div>
@@ -114,19 +120,27 @@ export function BookingForm({
           id="booking-notes"
           name="notes"
           rows={4}
+          required
+          disabled={pending}
           className={inputClassName}
         />
+        {notesError ? (
+          <p className="mt-1 text-sm text-destructive" role="alert">
+            {notesError}
+          </p>
+        ) : null}
       </div>
 
-      {showError ? (
+      {errorMessage ? (
         <p className="text-sm text-destructive" role="alert">
-          {page.formError}
+          {errorMessage}
         </p>
       ) : null}
 
       <button
         type="submit"
         disabled={pending}
+        aria-disabled={pending}
         className="inline-flex w-full items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-black shadow-sm transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         {pending ? page.formSending : page.formSubmit}

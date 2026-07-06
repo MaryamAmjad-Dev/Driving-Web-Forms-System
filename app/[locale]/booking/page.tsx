@@ -3,6 +3,7 @@ import { BookingPageClient } from "@/components/booking/booking-page-client";
 import { ROUTES } from "@/lib/constants";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildPageMetadata, resolveLocale } from "@/lib/seo/page-metadata";
+import { getPublicUser } from "@/lib/auth/user-session";
 
 export async function generateMetadata({
   params,
@@ -31,6 +32,7 @@ export default async function BookingPage({
   if (!locale) return null;
 
   const dict = await getDictionary(locale);
+  const user = await getPublicUser();
 
-  return <BookingPageClient dict={dict} />;
+  return <BookingPageClient dict={dict} isAuthenticated={!!user} />;
 }

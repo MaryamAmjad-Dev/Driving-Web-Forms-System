@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useRef, useState, type FormEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import {
-  submitContact,
-  type ContactFormState,
-} from "@/app/[locale]/contact/actions";
+import { USER_LOGIN_REQUIRED_MESSAGE } from "@/lib/auth/user-auth";
+import { submitFormApi } from "@/lib/forms/submit-form";
+import { hasMinWords } from "@/lib/forms/word-count";
 import { SubjectSelect } from "@/components/contact/subject-select";
 
 const inputClassName =
@@ -13,15 +14,80 @@ const inputClassName =
 
 type ContactFormProps = {
   dict: Dictionary;
+  isAuthenticated: boolean;
 };
 
-export function ContactForm({ dict }: ContactFormProps) {
-  const [state, formAction, pending] = useActionState<
-    ContactFormState,
-    FormData
-  >(submitContact, null);
+export function ContactForm({ dict, isAuthenticated }: ContactFormProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [pending, setPending] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [messageError, setMessageError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
-  if (state?.ok) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (submittingRef.current) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast.error(USER_LOGIN_REQUIRED_MESSAGE);
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    submittingRef.current = true;
+    setPending(true);
+    setErrorMessage(null);
+    setMessageError(null);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const c = dict.contactPage;
+    const message = String(formData.get("message") ?? "").trim();
+
+    if (!hasMinWords(message)) {
+      setMessageError(c.formMessageMinWords);
+      submittingRef.current = false;
+      setPending(false);
+      return;
+    }
+
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+      const result = await submitFormApi("/api/contact", payload);
+
+      if (!result.ok) {
+        const message = result.message || c.formError;
+
+        if (result.status === 401) {
+          toast.error(USER_LOGIN_REQUIRED_MESSAGE);
+          router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+          return;
+        }
+
+        setErrorMessage(message);
+        toast.error(message);
+        return;
+      }
+
+      form.reset();
+      setSuccess(true);
+      toast.success(c.formSuccess);
+    } catch {
+      setErrorMessage(c.formError);
+      toast.error(c.formError);
+    } finally {
+      submittingRef.current = false;
+      setPending(false);
+    }
+  }
+
+  if (success) {
     return (
       <p
         className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-100"
@@ -32,11 +98,10 @@ export function ContactForm({ dict }: ContactFormProps) {
     );
   }
 
-  const showError = state?.ok === false;
   const c = dict.contactPage;
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" aria-busy={pending}>
       <div>
         <label className="mb-1 block text-sm font-medium" htmlFor="name">
           {c.formName}
@@ -46,6 +111,7 @@ export function ContactForm({ dict }: ContactFormProps) {
           name="name"
           required
           autoComplete="name"
+          disabled={pending}
           className={inputClassName}
         />
       </div>
@@ -64,6 +130,7 @@ export function ContactForm({ dict }: ContactFormProps) {
           type="email"
           required
           autoComplete="email"
+          disabled={pending}
           className={inputClassName}
         />
       </div>
@@ -76,6 +143,7 @@ export function ContactForm({ dict }: ContactFormProps) {
           name="phone"
           type="tel"
           autoComplete="tel"
+          disabled={pending}
           className={inputClassName}
         />
       </div>
@@ -88,18 +156,24 @@ export function ContactForm({ dict }: ContactFormProps) {
           name="message"
           required
           rows={5}
-          minLength={10}
+          disabled={pending}
           className={inputClassName}
         />
+        {messageError ? (
+          <p className="mt-1 text-sm text-destructive" role="alert">
+            {messageError}
+          </p>
+        ) : null}
       </div>
-      {showError ? (
+      {errorMessage ? (
         <p className="text-sm text-destructive" role="alert">
-          {c.formError}
+          {errorMessage}
         </p>
       ) : null}
       <button
         type="submit"
         disabled={pending}
+        aria-disabled={pending}
         className="inline-flex w-full items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-black shadow-sm transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         {pending ? c.formSending : c.formSubmit}

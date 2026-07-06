@@ -1,5 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { defaultLocale, isLocale, locales } from "@/lib/i18n/config";
+import {
+  ADMIN_SESSION_COOKIE,
+  isAdminApiPath,
+  isAdminGuestPath,
+  isAdminPath,
+  isAdminProtectedPath,
+  isPublicAdminApiPath,
+  verifySessionToken,
+} from "@/lib/auth/admin-auth";
+import { isUserAuthPath } from "@/lib/auth/user-auth";
 
 function pathnameHasLocale(pathname: string): boolean {
   return locales.some(
@@ -13,7 +23,16 @@ function getLocaleFromPath(pathname: string): string | null {
   return segment && isLocale(segment) ? segment : null;
 }
 
-export function proxy(request: NextRequest) {
+async function getAdminSessionFromRequest(request: NextRequest) {
+  const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  if (!token) {
+    return null;
+  }
+
+  return verifySessionToken(token);
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (
@@ -21,6 +40,39 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.includes(".")
   ) {
+    if (isAdminApiPath(pathname) && !isPublicAdminApiPath(pathname)) {
+      const session = await getAdminSessionFromRequest(request);
+
+      if (!session) {
+        return NextResponse.json(
+          { ok: false, message: "Unauthorized." },
+          { status: 401 },
+        );
+      }
+    }
+
+    return NextResponse.next();
+  }
+
+  if (isAdminPath(pathname)) {
+    const session = await getAdminSessionFromRequest(request);
+
+    if (isAdminProtectedPath(pathname) && !session) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/admin/login";
+      return NextResponse.redirect(loginUrl);
+    }
+
+    if (isAdminGuestPath(pathname) && session) {
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = "/admin/dashboard";
+      return NextResponse.redirect(dashboardUrl);
+    }
+
+    return NextResponse.next();
+  }
+
+  if (isUserAuthPath(pathname)) {
     return NextResponse.next();
   }
 
