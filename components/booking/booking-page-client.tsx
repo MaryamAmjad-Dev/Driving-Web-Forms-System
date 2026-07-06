@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { USER_LOGIN_REQUIRED_MESSAGE } from "@/lib/auth/user-auth";
 import { submitFormApi } from "@/lib/forms/submit-form";
 import { hasMinWords } from "@/lib/forms/word-count";
 import { BookingForm } from "@/components/booking/booking-form";
@@ -15,9 +17,15 @@ import { PageHeader } from "@/components/ui/page-header";
 
 type BookingPageClientProps = {
   dict: Dictionary;
+  isAuthenticated: boolean;
 };
 
-export function BookingPageClient({ dict }: BookingPageClientProps) {
+export function BookingPageClient({
+  dict,
+  isAuthenticated,
+}: BookingPageClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -31,6 +39,12 @@ export function BookingPageClient({ dict }: BookingPageClientProps) {
     event.preventDefault();
 
     if (submittingRef.current) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast.error(USER_LOGIN_REQUIRED_MESSAGE);
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
@@ -57,6 +71,13 @@ export function BookingPageClient({ dict }: BookingPageClientProps) {
 
       if (!result.ok) {
         const message = result.message || page.formError;
+
+        if (result.status === 401) {
+          toast.error(USER_LOGIN_REQUIRED_MESSAGE);
+          router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+          return;
+        }
+
         setErrorMessage(message);
         toast.error(message);
         return;

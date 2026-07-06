@@ -6,11 +6,22 @@ import {
   validateBooking,
 } from "@/lib/forms/booking";
 import { hasMinWords } from "@/lib/forms/word-count";
+import { USER_LOGIN_REQUIRED_MESSAGE } from "@/lib/auth/user-auth";
+import { getUserSession } from "@/lib/auth/user-session";
 import { connectDB } from "@/lib/mongodb";
 import Booking from "@/models/Booking";
 
 export async function POST(request: Request) {
   try {
+    const userSession = await getUserSession();
+
+    if (!userSession) {
+      return NextResponse.json(
+        { ok: false, message: USER_LOGIN_REQUIRED_MESSAGE },
+        { status: 401 },
+      );
+    }
+
     let body: unknown;
     try {
       body = await request.json();

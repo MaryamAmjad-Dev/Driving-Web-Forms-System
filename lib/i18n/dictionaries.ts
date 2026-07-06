@@ -17,6 +17,9 @@ export const dictionaries = {
       contact: "Contact",
       booking: "Booking",
       book: "Book a lesson",
+      login: "Login",
+      signup: "Sign up",
+      logout: "Logout",
     },
     footer: {
       tagline: "Professional driving instruction helping learners in Peterborough pass with confidence.",
@@ -847,6 +850,9 @@ export const dictionaries = {
       contact: "Kontakt",
       booking: "Rezerwacja",
       book: "Umów jazdę",
+      login: "Zaloguj się",
+      signup: "Zarejestruj się",
+      logout: "Wyloguj się",
     },
     footer: {
       tagline:

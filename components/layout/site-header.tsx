@@ -9,13 +9,16 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { BrandMark } from '@/components/brand-mark';
 import { MobileNav } from '@/components/layout/site-mobile-nav';
 import { SiteHeaderNav } from '@/components/layout/site-header-nav';
+import { UserAuthNav } from '@/components/layout/user-auth-nav';
+import type { PublicUser } from '@/lib/auth/user-session';
 
 type SiteHeaderProps = {
   locale: Locale;
   dict: Dictionary;
+  user: PublicUser | null;
 };
 
-export function SiteHeader({ locale, dict }: SiteHeaderProps) {
+export function SiteHeader({ locale, dict, user }: SiteHeaderProps) {
   const base = localeBasePath(locale);
   const links = buildHeaderNavLinks(locale, dict);
 
@@ -40,6 +43,12 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
         <SiteHeaderNav locale={locale} links={links} />
 
         <div className="flex items-center justify-end gap-1.5 sm:gap-2">
+          <UserAuthNav
+            loginLabel={dict.nav.login}
+            signupLabel={dict.nav.signup}
+            logoutLabel={dict.nav.logout}
+            user={user}
+          />
           <Link
             href={localeBasePath(locale) + ROUTES.booking}
             className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-full bg-primary px-3 text-xs font-semibold text-black shadow-sm transition-colors hover:bg-primary/90 sm:px-4 sm:text-sm"
@@ -48,7 +57,7 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
             <span className="hidden md:inline">{dict.nav.book}</span>
           </Link>
           <ThemeToggle labels={themeToggleLabels(locale)} />
-          <MobileNav locale={locale} dict={dict} links={links} />
+          <MobileNav locale={locale} dict={dict} links={links} user={user} />
         </div>
       </div>
 
