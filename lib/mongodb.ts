@@ -41,26 +41,32 @@ async function resolveMongoUri(uri: string): Promise<string> {
   const pathAndQuery =
     slashIndex === -1 ? "" : hostAndRest.slice(slashIndex);
 
-  dns.setServers([...new Set([...publicDns, ...dns.getServers()])]);
+  try {
+    dns.setServers([...new Set([...publicDns, ...dns.getServers()])]);
 
-  const records = await dns.promises.resolveSrv(
-    `_mongodb._tcp.${clusterHost}`,
-  );
+    const records = await dns.promises.resolveSrv(
+      `_mongodb._tcp.${clusterHost}`,
+    );
 
-  const hosts = records.map((record) => `${record.name}:${record.port}`).join(",");
-  const params = new URLSearchParams(
-    pathAndQuery.includes("?") ? pathAndQuery.split("?")[1] : "",
-  );
+    const hosts = records
+      .map((record) => `${record.name}:${record.port}`)
+      .join(",");
+    const params = new URLSearchParams(
+      pathAndQuery.includes("?") ? pathAndQuery.split("?")[1] : "",
+    );
 
-  if (!params.has("ssl")) {
-    params.set("ssl", "true");
+    if (!params.has("ssl")) {
+      params.set("ssl", "true");
+    }
+    if (!params.has("authSource")) {
+      params.set("authSource", "admin");
+    }
+
+    const query = params.toString();
+    return `mongodb://${credentials}@${hosts}${pathAndQuery.split("?")[0]}${query ? `?${query}` : ""}`;
+  } catch {
+    return uri;
   }
-  if (!params.has("authSource")) {
-    params.set("authSource", "admin");
-  }
-
-  const query = params.toString();
-  return `mongodb://${credentials}@${hosts}${pathAndQuery.split("?")[0]}${query ? `?${query}` : ""}`;
 }
 
 export async function connectDB(): Promise<typeof mongoose> {

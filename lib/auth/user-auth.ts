@@ -146,4 +146,8 @@ export function isUserAuthPath(pathname: string): boolean {
   return pathname === "/login" || pathname === "/signup";
 }
 
+export function isUserAuthApiPath(pathname: string): boolean {
+  return pathname.startsWith("/api/auth/");
+}
+
 export const USER_LOGIN_REQUIRED_MESSAGE = "Please login to continue";

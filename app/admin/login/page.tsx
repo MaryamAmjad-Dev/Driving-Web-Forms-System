@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { LoginForm } from "@/components/admin/LoginForm";
@@ -37,16 +36,6 @@ export default async function AdminLoginPage() {
         <div className="msa-card-lift rounded-2xl border border-border/80 bg-card/90 p-6 shadow-sm backdrop-blur-sm">
           <LoginForm />
         </div>
-
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Need an account?{" "}
-          <Link
-            href="/admin/signup"
-            className="font-medium text-foreground underline-offset-2 hover:underline"
-          >
-            Create one
-          </Link>
-        </p>
       </div>
     </div>
   );

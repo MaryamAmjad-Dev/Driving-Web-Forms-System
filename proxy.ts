@@ -9,7 +9,7 @@ import {
   isPublicAdminApiPath,
   verifySessionToken,
 } from "@/lib/auth/admin-auth";
-import { isUserAuthPath } from "@/lib/auth/user-auth";
+import { isUserAuthApiPath, isUserAuthPath } from "@/lib/auth/user-auth";
 
 function pathnameHasLocale(pathname: string): boolean {
   return locales.some(
@@ -40,6 +40,10 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.includes(".")
   ) {
+    if (isUserAuthApiPath(pathname)) {
+      return NextResponse.next();
+    }
+
     if (isAdminApiPath(pathname) && !isPublicAdminApiPath(pathname)) {
       const session = await getAdminSessionFromRequest(request);
 
@@ -55,6 +59,12 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isAdminPath(pathname)) {
+    if (pathname === "/admin/signup") {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/admin/login";
+      return NextResponse.redirect(loginUrl);
+    }
+
     const session = await getAdminSessionFromRequest(request);
 
     if (isAdminProtectedPath(pathname) && !session) {

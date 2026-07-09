@@ -6,6 +6,8 @@ import {
   getUserSessionCookieOptions,
 } from "@/lib/auth/user-auth";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
     let body: unknown;

@@ -5,6 +5,8 @@ import {
   validateUserSignup,
 } from "@/lib/users/signup";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
     let body: unknown;

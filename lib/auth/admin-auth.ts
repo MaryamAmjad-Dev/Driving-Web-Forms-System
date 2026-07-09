@@ -149,7 +149,7 @@ export function isAdminSignupPath(pathname: string): boolean {
 }
 
 export function isAdminGuestPath(pathname: string): boolean {
-  return isAdminLoginPath(pathname) || isAdminSignupPath(pathname);
+  return isAdminLoginPath(pathname);
 }
 
 export function isAdminProtectedPath(pathname: string): boolean {
@@ -163,7 +163,5 @@ export function isAdminApiPath(pathname: string): boolean {
 }
 
 export function isPublicAdminApiPath(pathname: string): boolean {
-  return (
-    pathname === "/api/admin/login" || pathname === "/api/admin/signup"
-  );
+  return pathname === "/api/admin/login";
 }

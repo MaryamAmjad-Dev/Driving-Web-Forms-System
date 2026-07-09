@@ -4,6 +4,8 @@ import {
   getUserSessionCookieOptions,
 } from "@/lib/auth/user-auth";
 
+export const runtime = "nodejs";
+
 export async function POST() {
   try {
     const response = NextResponse.json({

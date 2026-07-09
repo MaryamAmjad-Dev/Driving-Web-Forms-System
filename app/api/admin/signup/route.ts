@@ -4,9 +4,19 @@ import {
   parseAdminSignupPayload,
   validateAdminSignup,
 } from "@/lib/admin/signup";
+import { getAdminSession } from "@/lib/auth/admin-session";
 
 export async function POST(request: Request) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { ok: false, message: "Unauthorized." },
+        { status: 401 },
+      );
+    }
+
     let body: unknown;
 
     try {
